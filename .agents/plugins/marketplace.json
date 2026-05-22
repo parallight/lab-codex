@@ -1,0 +1,21 @@
+{
+  "name": "parallight-cx",
+  "interface": {
+    "displayName": "Parallight Lab (Codex CLI)",
+    "shortDescription": "Agent-oriented learning labs for Codex CLI"
+  },
+  "plugins": [
+    {
+      "name": "parallight-lab",
+      "source": {
+        "source": "local",
+        "path": "./plugins/parallight-lab"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Engineering"
+    }
+  ]
+}
