@@ -10,6 +10,7 @@ description: "Parallight Lab —— 在 Codex 里跟着师傅 Marvin 学 AI agen
 学员用 `:lab*` 命令(或等价自然语言)使用 Parallight Lab。每个能力都对应 `parallight-lab` MCP server 的一个工具 —— 你的职责是识别意图、调对应工具、按下面的规则呈现。
 
 ## ⚠️ Codex host 适配(重要)
+
 - Codex **没有 AskUserQuestion 选项卡**。凡是需要**离散选择**的地方(选哪个 lab、CPC 的候选答案、要不要跑实验),一律改成**编号列表 + 让学员回复数字**。
 - **开放式理解检验**(让学员"用自己的话讲一遍")仍然让学员**自由打字**,不要降级成选项。
 - 注:若 `start_lab` 注入的师傅人格提到 "AskUserQuestion / 选项卡",那是 Claude Code 专用 —— 在 Codex 里按上面规则用编号列表替代。
