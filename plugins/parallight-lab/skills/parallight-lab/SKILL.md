@@ -1,6 +1,6 @@
 ---
 name: parallight-lab
-description: "Parallight Lab —— 在 Codex 里跟着Mentor Marvin 学 AI agent 实战(指挥 agent 写代码、理解、验证)。触发条件:用户消息以 :lab 开头(:lab-help / :lab / :lab-login / :lab-start <lab-id> / :lab-resume / :lab-status / :lab-analysis / :lab-compare / :lab-kb / :lab-review / :lab-read / :lab-private-message / :lab-reply <id> / :lab-logout / :lab-exit),或用自然语言要求登录 Parallight、查看/开始/继续 lab、问 lab 进度或知识点、提交 review、给 Marvin 发私信、查看Mentor回复、退出 lab。所有能力来自 parallight-lab MCP server 的工具。"
+description: "Parallight Lab —— 在 Codex 里跟着Mentor Marvin 学 AI agent 实战(指挥 agent 写代码、理解、验证)。触发条件:用户消息以 :lab 开头(:lab-help / :lab / :lab-login / :lab-start <lab-id> / :lab-resume / :lab-status / :lab-analysis / :lab-compare / :lab-kb / :lab-review / :lab-read / :lab-private-message / :lab-pull / :lab-push / :lab-rollback / :lab-reply <id> / :lab-logout / :lab-exit),或用自然语言要求登录 Parallight、查看/开始/继续 lab、问 lab 进度或知识点、提交 review、给 Marvin 发私信、查看Mentor回复、退出 lab。所有能力来自 parallight-lab MCP server 的工具。"
 ---
 
 <!-- AUTO-GENERATED from commands-src/*.md — do not edit. Run `pnpm gen:commands`. -->
@@ -32,6 +32,9 @@ description: "Parallight Lab —— 在 Codex 里跟着Mentor Marvin 学 AI agen
 - :lab-review — 提交一次 lab review 给真人 Marvin 批改
 - :lab-read — 查看真人 Marvin 的批改和私信回复
 - :lab-private-message — 给真人 Marvin 发一条私信（只有他本人会读）
+- :lab-pull — 从云端在线 lab 同步到本地(cloud → local)
+- :lab-push — 把本地改动同步到云端在线 lab(local → cloud)
+- :lab-rollback — 回滚 lab 到之前某个同步前的状态
 - :lab-reply — 回复Mentor对某次 review 的批改
 - :lab-logout — 退出 Parallight Lab 登录，清除本地凭证
 - :lab-exit — 退出当前 lab，清除注入的Mentor人格
@@ -126,6 +129,35 @@ description: "Parallight Lab —— 在 Codex 里跟着Mentor Marvin 学 AI agen
 - **发送前确认**（用编号:1 确认发送 / 2 再改改 / 3 取消）。
 - 选 `确认发送` 后调 `send_message`（body = 学员写的内容）。
 - 成功后简短确认，提示「:lab-read 看Mentor的回复」。
+
+### `:lab-pull`(或"从云端拉取" / "同步云端的改动到本地")
+学员想把云端在线 lab(沙箱 `~/parallight`)里的改动同步到本地当前 lab 目录。
+
+- 先调 `lab_pull`(**不传 apply**)。
+- 如果返回**干净结果**(已自动合并 / 已是最新)→ 一句话汇报即可,例如「拉取了 N 个云端提交,自动合并了 M 个文件」,不用展开。
+- 如果返回 **needsConfirm**(带一份计划:内容冲突 和/或 云端删除)→ 不要直接照搬列表,**用人话**逐条讲给学员:
+  - 内容冲突:云端在这个文件改了什么、你本地改了什么、为什么撞上了。
+  - 云端删除:云端把哪个文件删了,而你本地可能还在用它——**删除一定要单独、明确地问学员确认**,绝不默认替他删。
+  - 学员都确认要应用后,再调 `lab_pull`(`apply: true`)完成合并。
+- apply 后若工作区里出现 `<<<<<<<` 冲突标记,按学员的意愿把这些文件改好,再提交(commit)。
+- 收尾提一句:合并前已自动打了备份标签,反悔随时可以 :lab-rollback。
+- 报错时把返回的友好提示原样转达(还没开过云端 lab / 同步是付费功能 / 另一个同步正在进行,稍等再试)。没有进行中的 lab 就提示先 :lab-start 或 :lab-resume。
+
+### `:lab-push`(或"推送到云端" / "把本地改动同步到云端")
+学员想把本地当前 lab 目录的改动推到云端在线 lab(沙箱 `~/parallight`)。
+
+- 调 `lab_push`(无参数)。它会**自动先提交未保存的改动、再先拉取合并云端**(合并只在本地发生),最后把云端缺的提交推上去。
+- 如果在「先拉取合并」这一步**撞上冲突**,工作区会留下冲突标记 → 按学员意愿把冲突文件改好、提交,然后**重跑** :lab-push。
+- 成功后一句话汇报,例如「已推送,云端已更新」。
+- 失败时把返回的友好提示原样转达,常见几类:没有要推送的东西(本地没有云端缺的提交)/ 云端又动了,请重跑 :lab-push / 还没开过云端 lab(先去网页开一次在线 lab)/ 同步是付费功能。没有进行中的 lab 就提示先 :lab-start 或 :lab-resume。
+
+### `:lab-rollback`(或"回滚 lab" / "回到之前的版本" / "撤销刚才的同步")
+学员想把本地当前 lab 目录回到某个之前的版本(通常是某次同步前自动打的备份标签,或某个提交)。
+
+- 先调 `lab_rollback`(**不传 ref**)→ 它会列出可选的备份点(lab-backup 标签)+ 最近的提交。把这份清单清楚地展示给学员(说明大致是「什么时候、做了什么之前」的快照),让他挑一个要回到的版本。
+- 学员选定后,再调 `lab_rollback`(`ref` = 他选中的那个标签或提交)完成回滚。
+- 安抚一句:回滚**绝不丢东西**——回滚前会先把当前状态也存成一个标签,所以这步本身也是可撤销的,挑错了还能再回来。
+- 如果返回「还没有可回滚的版本」→ 告诉学员同步过至少一次后才会有备份点(先 :lab-pull 或 :lab-push)。没有进行中的 lab 就提示先 :lab-start 或 :lab-resume。
 
 ### `:lab-reply`(或"回复Mentor的批改")
 学员要回复某条 review 批改。
