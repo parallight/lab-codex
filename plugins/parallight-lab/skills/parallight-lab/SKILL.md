@@ -1,6 +1,6 @@
 ---
 name: parallight-lab
-description: "Parallight Lab —— 在 Codex 里跟着Mentor Marvin 学 AI agent 实战(指挥 agent 写代码、理解、验证)。触发条件:用户消息以 :lab 开头(:lab-help / :lab / :lab-login / :lab-start <lab-id> / :lab-resume / :lab-status / :lab-analysis / :lab-compare / :lab-kb / :lab-review / :lab-read / :lab-private-message / :lab-pull / :lab-push / :lab-rollback / :lab-reply <id> / :lab-logout / :lab-exit),或用自然语言要求登录 Parallight、查看/开始/继续 lab、问 lab 进度或知识点、提交 review、给 Marvin 发私信、查看Mentor回复、退出 lab。所有能力来自 parallight-lab MCP server 的工具。"
+description: "Parallight Lab —— 在 Codex 里跟着Mentor Marvin 学 AI agent 实战(指挥 agent 写代码、理解、验证)。触发条件:用户消息以 :lab 开头(:lab-help / :lab / :lab-login / :lab-start <lab-id> / :lab-resume / :lab-status / :lab-analysis / :lab-compare / :lab-kb / :lab-review / :lab-read / :lab-private-message / :lab-pull / :lab-push / :lab-rollback / :lab-reply <id> / :lab-logout / :lab-exit / :hotspot),或用自然语言要求登录 Parallight、查看/开始/继续 lab、问 lab 进度或知识点、提交 review、给 Marvin 发私信、查看Mentor回复、退出 lab。所有能力来自 parallight-lab MCP server 的工具。"
 ---
 
 <!-- AUTO-GENERATED from commands-src/*.md — do not edit. Run `pnpm gen:commands`. -->
@@ -38,6 +38,7 @@ description: "Parallight Lab —— 在 Codex 里跟着Mentor Marvin 学 AI agen
 - :lab-reply — 回复Mentor对某次 review 的批改
 - :lab-logout — 退出 Parallight Lab 登录，清除本地凭证
 - :lab-exit — 退出当前 lab，清除注入的Mentor人格
+- :hotspot — 尝鲜台热点 — 列出可动手试的 AI 热点卡,选一张在本机跑
 
 学员问某条具体怎么用,就简短解释那一条。
 
@@ -171,3 +172,10 @@ description: "Parallight Lab —— 在 Codex 里跟着Mentor Marvin 学 AI agen
 
 ### `:lab-exit`
 调用 `exit_lab` 工具。它会返回一条 SYSTEM 指示让你卸下Mentor人格 + lab 操作准则。按指示执行：恢复成普通助手身份，简短确认已退出。退出后**不再**以 `📚 [Lab...]` 结尾。
+
+### `:hotspot`
+1. 调 `list_hotspots` 工具(无需登录,匿名可看)。
+2. 把表格原样展示后,用选项卡(AskUserQuestion)让学员选要试哪个热点(外加「先看看」),不要让他打字输 slug。
+3. 学员选定后调 `try_hotspot`。按工具返回的指引:逐步执行 fresh/<slug>.md 里的步骤,每一步先用一句话讲清要做什么、学员确认后再执行,绝不无人值守批量跑完。
+4. 全部步骤跑完后按 expect 验收并告知通过与否;通过则调 `complete_hotspot` 同步「我的实验台」。未登录就提一句 /lab-login 之后可以同步进度,不强推。
+5. 学员只想看看就别推着他试。
