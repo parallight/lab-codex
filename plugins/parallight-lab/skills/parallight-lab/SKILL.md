@@ -1,6 +1,6 @@
 ---
 name: parallight-lab
-description: "Parallight Lab —— 在 Codex 里跟着Mentor Marvin 学 AI agent 实战(指挥 agent 写代码、理解、验证)。触发条件:用户消息以 :lab 开头(:lab-help / :lab / :lab-login / :lab-start <lab-id> / :lab-resume / :lab-status / :lab-analysis / :lab-compare / :more-model / :lab-kb / :lab-review / :lab-read / :lab-private-message / :lab-pull / :lab-push / :lab-rollback / :lab-reply <id> / :lab-logout / :lab-exit / :hotspot),或用自然语言要求登录 Parallight、查看/开始/继续 lab、问 lab 进度或知识点、提交 review、给 Marvin 发私信、查看Mentor回复、退出 lab。所有能力来自 parallight-lab MCP server 的工具。"
+description: "Parallight Lab —— 在 Codex 里跟着Mentor Marvin 学 AI agent 实战(指挥 agent 写代码、理解、验证)。触发条件:用户消息以 :lab 开头(:lab-help / :lab / :lab-login / :lab-start <lab-id> / :lab-resume / :lab-status / :lab-analysis / :lab-compare / :super-loop / :more-model / :lab-kb / :lab-review / :lab-read / :lab-private-message / :lab-pull / :lab-push / :lab-rollback / :lab-reply <id> / :lab-logout / :lab-exit / :hotspot),或用自然语言要求登录 Parallight、查看/开始/继续 lab、问 lab 进度或知识点、提交 review、给 Marvin 发私信、查看Mentor回复、退出 lab。所有能力来自 parallight-lab MCP server 的工具。"
 ---
 
 <!-- AUTO-GENERATED from commands-src/*.md — do not edit. Run `pnpm gen:commands`. -->
@@ -28,6 +28,7 @@ description: "Parallight Lab —— 在 Codex 里跟着Mentor Marvin 学 AI agen
 - :lab-status — Mentor总结当前 lab 的进度
 - :lab-analysis — 生成并打开本次 lab 的会话分析报告(把 agent 在做什么拆给你看)
 - :lab-compare — 打开本次 lab 的 Compare 面板(同一个任务,横向对比不同模型 / prompt 的跑法)
+- :super-loop — 提交一个超长自主任务(目标/指标/时间/资源),云端沙箱长跑
 - :more-model — 列出所有可用模型(Claude / GLM / Kimi / DeepSeek / Qwen / MiniMax)+ 价格,选一个切换
 - :lab-kb — 显示当前 lab 的知识点清单（只读）
 - :lab-review — 提交一次 lab review 给真人 Marvin 批改
@@ -104,6 +105,9 @@ description: "Parallight Lab —— 在 Codex 里跟着Mentor Marvin 学 AI agen
 5. 学员要点评/下一步时调 `compare_results` 读回，客观转述——**不替他判定哪个最好**，判定交给他的眼睛和 👍。
 
 如果工具提示「还没登录」，引导学员先 :lab-login。提示「还没有进行中的 lab」，引导 :lab 选一个。
+
+### `:super-loop`
+调用 `super_loop` 工具,把它返回的 URL 原样展示给学员,并用一两句话说明:在页面里填「目标 / 评测指标 / 预期时间 / 最大资源」提交后,agent 会在云端沙箱里持续干活,关页面不中断,进度回同一页面看。
 
 ### `:more-model`(或"换模型" / "切换模型" / "看看有哪些模型" / "more model")
 1. 调 `list_models` 工具(无需登录,匿名可看)。
