@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "parallight-lab": {
-      "command": "node",
-      "args": ["./bundle/server.js"],
-      "cwd": "."
-    }
-  }
-}

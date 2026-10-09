@@ -1,15 +1,15 @@
 {
   "name": "parallight-cx",
   "interface": {
-    "displayName": "Parallight Lab (Codex CLI)",
-    "shortDescription": "Agent-oriented learning labs for Codex CLI"
+    "displayName": "OpenLabs (Codex CLI)",
+    "shortDescription": "OpenLabs by Parallight — agent-oriented learning labs for Codex CLI"
   },
   "plugins": [
     {
-      "name": "parallight-lab",
+      "name": "openlabs",
       "source": {
         "source": "local",
-        "path": "./plugins/parallight-lab"
+        "path": "./plugins/openlabs"
       },
       "policy": {
         "installation": "AVAILABLE",

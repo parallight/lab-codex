@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "openlabs": {
+      "command": "node",
+      "args": [
+        "./bundle/server.js"
+      ],
+      "cwd": ".",
+      "tool_timeout_sec": 900,
+      "env": {
+        "PARALLIGHT_PLUGIN_NAME": "openlabs"
+      }
+    }
+  }
+}
