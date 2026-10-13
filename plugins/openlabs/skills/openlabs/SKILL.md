@@ -19,13 +19,14 @@ description: "OpenLabs(Parallight Lab)与 Agentist 助教：在 Codex 里跟随�
 
 ## 命令分发
 
-支持的命令：:openlabs [connect | 你想学的主题] / :lab-help / :lab / :lab-login / :lab-start <lab-id> / :lab-resume / :lab-status / :lab-analysis / :lab-compare / :super-loop / :more-model / :lab-kb / :agentist <问题> / :lab-assistant <问题> / :lab-check <task id,如 t1> / :teachboard connect | 你想学的主题 / :teachboard-install <包...> [--env <环境id>] / :lab-review / :lab-read / :lab-private-message / :lab-pull / :lab-push / :lab-rollback / :lab-evaluate [task | result <job_id>] / :lab-reply <id> / :lab-logout / :lab-exit / :hotspot
+支持的命令：:openlabs [connect | watch | 你想学的主题] / :lab-help / :lab / :lab-login / :lab-start <lab-id> / :lab-resume / :lab-status / :lab-analysis / :lab-compare / :super-loop / :more-model / :lab-kb / :agentist <问题> / :lab-assistant <问题> / :lab-check <task id,如 t1> / :teachboard connect | 你想学的主题 / :teachboard-install <包...> [--env <环境id>] / :lab-review / :lab-read / :lab-private-message / :lab-pull / :lab-push / :lab-rollback / :lab-evaluate [task | result <job_id>] / :lab-reply <id> / :lab-logout / :lab-exit / :hotspot
 
 ### `:openlabs`(或"openlabs" / "open labs" / "打开 openlabs")
 参数 = `$ARGUMENTS`(去掉多余空格)。这是插件的总入口,先分流,再按下面对应的一节做:
 
-- **参数为空** → 用编号:1 学课程(看可用的 lab 和进度) / 2 做实验(开始 / 继续一个 lab) / 3 画成白板(把一个主题逐幕上板) / 4 连接白板账户。「学课程」「做实验」→「学课程」一节;「画成白板」→ 先问学员想学什么主题,再按「白板」一节做;「连接白板账户」→「白板」一节里「参数是 connect」的做法。
+- **参数为空** → 用编号:1 学课程(看可用的 lab 和进度) / 2 做实验(开始 / 继续一个 lab) / 3 画成白板(把一个主题逐幕上板) / 4 连接白板账户。「学课程」「做实验」→「学课程」一节;「画成白板」→ 先问学员想学习什么、或想探索什么 AI 内容,再按「白板」一节做;「连接白板账户」→「白板」一节里「参数是 connect」的做法。
 - **参数是 `connect`** →「白板」一节里「参数是 connect」的做法。
+- **参数是 `watch`**(或学员说「盯着板」「我写完你就看」)→ 调 `tb_watch`,按它返回的说明用**后台方式**启动那条命令,告诉学员「我在盯着板,你写完我就看」;命令结束把你唤醒时,读它的输出、照常回应(先 `tb_get_board` / `tb_describe`,学员的问题用 `tb_reply` 答在旁边),然后再后台启动同一条命令。学员说「别盯了」就停。(没有「后台任务结束自动唤醒」的宿主——比如 Codex——改为在你的回合里调 `tb_wait_changes`,并告诉学员盯板只在这一轮有效。)
 - **其它(想学的主题 / 参考资料)** →「白板」一节,参数就是主题。
 
 ## 学课程(与 :lab 相同)
@@ -44,20 +45,22 @@ description: "OpenLabs(Parallight Lab)与 Agentist 助教：在 Codex 里跟随�
 **语言规则 / Language rule**:Write everything on the board — titles, text, captions, labels, chart names, reply boxes — in the language the user wrote this request in. If the user writes English: call `tb_describe_schema` with `lang:"en"` and set `lang:"en"` in the board spec. Chinese → `lang:"zh"`. Other languages → write content in that language and set `lang` to the closer of en/zh (en for non-CJK). Relay tool messages to the user in their language (translate the Chinese tool texts when the user is not Chinese).
 板上的一切(标题、文字、图注、标签、图表名、回复框)一律用用户提出这个请求时所用的语言写。用户用英文 → 调 `tb_describe_schema` 时传 `lang:"en"`,板 spec 里设 `lang:"en"`;中文 → `lang:"zh"`;其它语言 → 内容用该语言写,`lang` 取最接近的 en/zh(非中日韩文字用 en)。把工具消息转给用户时用用户的语言(用户不是中文时,翻译中文的工具文本)。
 
-**参数是 `connect`**(或学员说「连接白板」):调 `tb_connect`,把结果原样告诉学员(含短码与网址)。若结果说「请在浏览器核对短码后点连接」,等学员说点好了再调一次 `tb_connect` 确认已连上。到此为止,不要顺手建板。
+**参数是 `connect`**(或学员说「连接白板」):调 `tb_connect`。第一次调用会立刻返回短码和链接 —— **先把短码原样告诉学员**(授权页会请他核对终端里的短码,一致才点「连接」),然后马上再调一次 `tb_connect`,它会等学员点完(最多 50 秒);还没点就把结果原样转告,等学员说点好了再调一次。连上后把结果里那句「想学习什么、或者想探索什么 AI 内容」原样转给学员。到此为止,不要顺手建板。
 
-**否则(参数是想学的主题 / 参考资料,或为空时先问学员想学什么)**:
+**否则(参数是想学习 / 想探索的主题、参考资料,或为空时先问学员想学习什么、或想探索什么 AI 内容)**:
 
 0. **先对齐,再上板**(Marvin 1009:没有这一步就没有个性化)。建板前要知道三件事:**目标**(学什么 / 探索什么 / 做什么实验,想做到什么程度)、**背景**(已经会什么、卡在哪)、**参考**(想沿着哪本书 / 哪门课 / 哪篇论文 / 哪份代码走,有没有自己的材料)。
    - 对话里还看不出来的 → 用**一条**消息问,最多 3 个问题,每个给 2–3 个可选项让学员点选,不要连环追问。
    - 对话里已经能判断的 → 不再问,直接写出你的判断(一句话画像)和建议的学习路径(幕的清单,一幕一行),请学员确认或修改。
    - 学员确认(或改完)之后才建板;把核对过的目标 / 背景 / 参考 / 路径写进 spec 的 `brief`。学员说「直接上板 / 别问了」→ 不问,但仍用一行写出你打算走的路径再开始。
 1. 本会话还没读过契约时,先调一次 `tb_describe_schema`,按它的元素契约与教法规划整块板(先在心里分好幕:每幕一个要点)。
-2. 主题涉及要跑的代码时,调 `tb_list_envs` 选环境;代码块的 `env` / `defaultEnv` 只能用这里列出的 id。环境给的 advice 是给学习者的**建议**,原样转述,是否照做由学员决定;不要替学员写作业代码。
-3. 建板:**第一幕永远是「预告」**(`id:"outline"`,标题如「今天的路线」):一句话说清学完能做到什么,再分三组列出「我们会讲」(后面每一幕一行,和真正的幕标题一致)、「动手实验」(跑什么、在哪个环境、看什么现象)、「学完你会」(2–3 条能检验的收获),格式见 `tb_describe_schema` 的示例。整块板(含预告)只有 ≤3 幕时可以一次 `tb_create_board`;否则先 `tb_create_board` 建预告幕,之后**一幕一次** `tb_add_act` 往后加,不要攒成一大坨。
+2. 主题涉及要跑的代码时,调 `tb_list_envs` 选环境(含学员自己建的「我的环境」;现成的都不够用 → 按 `tb_env_customize` 的规矩列方案、学员同意后再建;学员直接说「我想建个 X 环境 / 做 Y 实验」也走这条);代码块的 `env` / `defaultEnv` 只能用这里列出的 id。环境给的 advice 是给学习者的**建议**,原样转述,是否照做由学员决定;不要替学员写作业代码。
+3. 建项目和第 1 章:新主题用 `tb_create_project`(项目标题 + 板单 + 第 1 章的 spec;板单就是第 0 步和学员确认过的路径,每章一句话目标,最多 12 章),**只建第 1 章**。第 1 章的预告是整个项目的地图,其余章节的预告开头写「第 n 章,共 N 章」。**第一幕永远是「预告」**(`id:"outline"`,标题如「今天的路线」):一句话说清学完能做到什么,再分三组列出「我们会讲」(后面每一幕一行,和真正的幕标题一致)、「动手实验」(跑什么、在哪个环境、看什么现象)、「学完你会」(2–3 条能检验的收获),格式见 `tb_describe_schema` 的示例。**讲法**:一块板只讲一个主题(主题不止一个就拆成几章;讲到一半学员问到另一个主题,用 `tb_plan_project` 追加一章,不往这块板上加);板上每出现一个新概念,先讲问题背景(原来怎么做、卡在哪、为什么需要它),再讲怎么优化(思路、方法、关键公式),最后才是代码对比 / 实际案例 / 实验对比,不要一上来就甩代码。整块板(含预告)只有 ≤3 幕时可以一次建完;否则先建预告幕(第 1 章用 `tb_create_project`,之后的章节用 `tb_create_board({projectId, slot, spec})`),之后**一幕一次** `tb_add_act` 往后加,不要攒成一大坨。
 4. **每次**工具返回后,把结果的**第一行**(进度行,例如「✅ 第 3/7 幕… · 打开 <链接>」)原样发给学员,再继续下一幕。
-5. 全部上板后:用两三句话总结这块板讲了什么,给出板的链接;若板上有绑了环境的代码块,再加一句「说『跑一下 E12』我就在环境里跑」(E12 换成板上真实的代码块编号)。
-6. **改板(学员回来追问 / 让你改)**:学员粘来 `tb:<板>/E<n>` 这样的元素编号时,先 `tb_describe` 读它的全文、所在幕、箭头和邻居,再 `tb_reply` 把回答方框放在它旁边(回答原文在对话里也给一遍);改代码 = `tb_update {boardId, changes:[{entity, code}]}` 然后 `tb_run`,**每条改动只填一个字段**(text / ascii(公式,AsciiMath,优先)/ latex(AsciiMath 写不出来时)/ code / label / tone);结果里的 `conflicts` 是学员自己改过的元素,先 `tb_describe` 看过再决定要不要覆盖;删元素用 `tb_delete`(删之前跟学员确认);调幕序 `tb_set_acts`;代码块没绑环境就 `tb_bind_env` 再跑。这些工具的结果第一行同样原样发给学员。
+5. 全部上板后:用两三句话总结这块板讲了什么,给出板的链接;若板上有绑了环境的代码块,再加一句「说『跑一下 E12』我就在环境里跑」(E12 换成板上真实的代码块编号)。属于项目时再加一句「学完说『继续』,或在板上点下一章,我就建下一章」,然后停下,用 :openlabs watch 盯板;收到「请求下一块」或学员说「继续」,先 `tb_get_project` 看板单和学员在哪、`tb_get_board` 看上一章学员写了什么,再 `tb_create_board({projectId, slot, spec})`。
+6. **改板(学员回来追问 / 在板上写问题、做标记 / 让你改)**:**答案贴在它旁边,不要新开一幕接在后面**。先 `tb_get_board` 看「学员在板上写的 / 标记的」一节(学员粘来 `tb:<板>/E<n>` 编号时直接用它),必要时 `tb_describe` 读全文和邻居,再 `tb_reply` 把回答方框放在最相关的元素旁边并画箭头(学员写的那句问题、高亮的那段、或问题所指的那块;几个问题就分别贴;回答原文在对话里也给一遍),**带上 `act`** = 这个问题关于哪一幕(按问题的意思从读板结果列的幕 id 里挑,不按它画在哪 —— 导览模式会把问题和回答接在那一幕之后播);只有真正的新话题才 `tb_add_act`;**学员自己手工做了一部分板、打了导览步骤的标签,再让你接着做**:读板结果里的「板上的导览步骤」列着他的步骤和标签,按标签理解他的思路、接着他的内容往下讲,新幕的 edges 用 `E<n>` 把新内容连到学员的元素上(`{from:"E5", to:"<本幕条目 id>"}`),别另起炉灶;改代码 = `tb_update {boardId, changes:[{entity, code}]}` 然后 `tb_run`,**每条改动只填一个字段**(text / ascii(公式,AsciiMath,优先)/ latex(AsciiMath 写不出来时)/ code / label / tone);结果里的 `conflicts` 是你上次读板之后学员自己改过 / 删掉的元素(这次没动它们):先 `tb_describe` 看学员改成了什么,要覆盖先问学员,同意后带 `force:true` 重发;删元素用 `tb_delete`(删之前跟学员确认);调幕序 `tb_set_acts`;代码块没绑环境就 `tb_bind_env` 再跑。这些工具的结果第一行同样原样发给学员。
+
+7. **板上新动静**:工具结果末尾的「📌 学员在板上的新动静」、以及学员发话时自动附上的同样内容,都是学员刚在板上做的事 —— 当成学员在对你说话来回应(问题答在旁边,改动先看懂再接着讲);学员想让你一直盯着,用 :openlabs watch。
 
 **边界**:工具说「还没连上 / 未连接」→ 让学员先 :openlabs connect;返回 402(额度 / 预算不够)→ 原话转达,不要重试;其它错误按工具给的下一步走,不要把原始报错甩给学员。
 
@@ -80,7 +83,7 @@ description: "OpenLabs(Parallight Lab)与 Agentist 助教：在 Codex 里跟随�
 - :lab-assistant — 就当前 lab 的问题请 Lab 助手解答(它知道参考解与你的评测记录,但默认只给方向不给答案)
 - :lab-check — 在本机跑当前 lab 某个 task 的自检命令并上报看板(评测型 task 请用 /lab-evaluate)
 - :teachboard — 把你想学的主题画成一块 teachboard 白板(逐幕上板,代码块可在云端环境里跑);connect = 连接你的白板账户
-- :teachboard-install — 给白板的代码环境加装 Python 包(验证通过后绑到代码块或运行时传 recipe 才生效)
+- :teachboard-install — 建「我的环境」:在白板的代码环境上加系统包(apt)和 Python 包(验证通过后绑到代码块或运行时传 recipe 才生效)
 - :lab-review — 提交一次 lab review 给真人 Mentor 批改
 - :lab-read — 查看 Mentor 的批改和私信回复
 - :lab-private-message — 给本课程 Mentor 发一条私信
@@ -267,20 +270,22 @@ Lab 助手在服务端,手里有这个 lab 的参考解、知识点清单、教�
 **语言规则 / Language rule**:Write everything on the board — titles, text, captions, labels, chart names, reply boxes — in the language the user wrote this request in. If the user writes English: call `tb_describe_schema` with `lang:"en"` and set `lang:"en"` in the board spec. Chinese → `lang:"zh"`. Other languages → write content in that language and set `lang` to the closer of en/zh (en for non-CJK). Relay tool messages to the user in their language (translate the Chinese tool texts when the user is not Chinese).
 板上的一切(标题、文字、图注、标签、图表名、回复框)一律用用户提出这个请求时所用的语言写。用户用英文 → 调 `tb_describe_schema` 时传 `lang:"en"`,板 spec 里设 `lang:"en"`;中文 → `lang:"zh"`;其它语言 → 内容用该语言写,`lang` 取最接近的 en/zh(非中日韩文字用 en)。把工具消息转给用户时用用户的语言(用户不是中文时,翻译中文的工具文本)。
 
-**参数是 `connect`**(或学员说「连接白板」):调 `tb_connect`,把结果原样告诉学员(含短码与网址)。若结果说「请在浏览器核对短码后点连接」,等学员说点好了再调一次 `tb_connect` 确认已连上。到此为止,不要顺手建板。
+**参数是 `connect`**(或学员说「连接白板」):调 `tb_connect`。第一次调用会立刻返回短码和链接 —— **先把短码原样告诉学员**(授权页会请他核对终端里的短码,一致才点「连接」),然后马上再调一次 `tb_connect`,它会等学员点完(最多 50 秒);还没点就把结果原样转告,等学员说点好了再调一次。连上后把结果里那句「想学习什么、或者想探索什么 AI 内容」原样转给学员。到此为止,不要顺手建板。
 
-**否则(参数是想学的主题 / 参考资料,或为空时先问学员想学什么)**:
+**否则(参数是想学习 / 想探索的主题、参考资料,或为空时先问学员想学习什么、或想探索什么 AI 内容)**:
 
 0. **先对齐,再上板**(Marvin 1009:没有这一步就没有个性化)。建板前要知道三件事:**目标**(学什么 / 探索什么 / 做什么实验,想做到什么程度)、**背景**(已经会什么、卡在哪)、**参考**(想沿着哪本书 / 哪门课 / 哪篇论文 / 哪份代码走,有没有自己的材料)。
    - 对话里还看不出来的 → 用**一条**消息问,最多 3 个问题,每个给 2–3 个可选项让学员点选,不要连环追问。
    - 对话里已经能判断的 → 不再问,直接写出你的判断(一句话画像)和建议的学习路径(幕的清单,一幕一行),请学员确认或修改。
    - 学员确认(或改完)之后才建板;把核对过的目标 / 背景 / 参考 / 路径写进 spec 的 `brief`。学员说「直接上板 / 别问了」→ 不问,但仍用一行写出你打算走的路径再开始。
 1. 本会话还没读过契约时,先调一次 `tb_describe_schema`,按它的元素契约与教法规划整块板(先在心里分好幕:每幕一个要点)。
-2. 主题涉及要跑的代码时,调 `tb_list_envs` 选环境;代码块的 `env` / `defaultEnv` 只能用这里列出的 id。环境给的 advice 是给学习者的**建议**,原样转述,是否照做由学员决定;不要替学员写作业代码。
-3. 建板:**第一幕永远是「预告」**(`id:"outline"`,标题如「今天的路线」):一句话说清学完能做到什么,再分三组列出「我们会讲」(后面每一幕一行,和真正的幕标题一致)、「动手实验」(跑什么、在哪个环境、看什么现象)、「学完你会」(2–3 条能检验的收获),格式见 `tb_describe_schema` 的示例。整块板(含预告)只有 ≤3 幕时可以一次 `tb_create_board`;否则先 `tb_create_board` 建预告幕,之后**一幕一次** `tb_add_act` 往后加,不要攒成一大坨。
+2. 主题涉及要跑的代码时,调 `tb_list_envs` 选环境(含学员自己建的「我的环境」;现成的都不够用 → 按 `tb_env_customize` 的规矩列方案、学员同意后再建;学员直接说「我想建个 X 环境 / 做 Y 实验」也走这条);代码块的 `env` / `defaultEnv` 只能用这里列出的 id。环境给的 advice 是给学习者的**建议**,原样转述,是否照做由学员决定;不要替学员写作业代码。
+3. 建项目和第 1 章:新主题用 `tb_create_project`(项目标题 + 板单 + 第 1 章的 spec;板单就是第 0 步和学员确认过的路径,每章一句话目标,最多 12 章),**只建第 1 章**。第 1 章的预告是整个项目的地图,其余章节的预告开头写「第 n 章,共 N 章」。**第一幕永远是「预告」**(`id:"outline"`,标题如「今天的路线」):一句话说清学完能做到什么,再分三组列出「我们会讲」(后面每一幕一行,和真正的幕标题一致)、「动手实验」(跑什么、在哪个环境、看什么现象)、「学完你会」(2–3 条能检验的收获),格式见 `tb_describe_schema` 的示例。**讲法**:一块板只讲一个主题(主题不止一个就拆成几章;讲到一半学员问到另一个主题,用 `tb_plan_project` 追加一章,不往这块板上加);板上每出现一个新概念,先讲问题背景(原来怎么做、卡在哪、为什么需要它),再讲怎么优化(思路、方法、关键公式),最后才是代码对比 / 实际案例 / 实验对比,不要一上来就甩代码。整块板(含预告)只有 ≤3 幕时可以一次建完;否则先建预告幕(第 1 章用 `tb_create_project`,之后的章节用 `tb_create_board({projectId, slot, spec})`),之后**一幕一次** `tb_add_act` 往后加,不要攒成一大坨。
 4. **每次**工具返回后,把结果的**第一行**(进度行,例如「✅ 第 3/7 幕… · 打开 <链接>」)原样发给学员,再继续下一幕。
-5. 全部上板后:用两三句话总结这块板讲了什么,给出板的链接;若板上有绑了环境的代码块,再加一句「说『跑一下 E12』我就在环境里跑」(E12 换成板上真实的代码块编号)。
-6. **改板(学员回来追问 / 让你改)**:学员粘来 `tb:<板>/E<n>` 这样的元素编号时,先 `tb_describe` 读它的全文、所在幕、箭头和邻居,再 `tb_reply` 把回答方框放在它旁边(回答原文在对话里也给一遍);改代码 = `tb_update {boardId, changes:[{entity, code}]}` 然后 `tb_run`,**每条改动只填一个字段**(text / ascii(公式,AsciiMath,优先)/ latex(AsciiMath 写不出来时)/ code / label / tone);结果里的 `conflicts` 是学员自己改过的元素,先 `tb_describe` 看过再决定要不要覆盖;删元素用 `tb_delete`(删之前跟学员确认);调幕序 `tb_set_acts`;代码块没绑环境就 `tb_bind_env` 再跑。这些工具的结果第一行同样原样发给学员。
+5. 全部上板后:用两三句话总结这块板讲了什么,给出板的链接;若板上有绑了环境的代码块,再加一句「说『跑一下 E12』我就在环境里跑」(E12 换成板上真实的代码块编号)。属于项目时再加一句「学完说『继续』,或在板上点下一章,我就建下一章」,然后停下,用 :openlabs watch 盯板;收到「请求下一块」或学员说「继续」,先 `tb_get_project` 看板单和学员在哪、`tb_get_board` 看上一章学员写了什么,再 `tb_create_board({projectId, slot, spec})`。
+6. **改板(学员回来追问 / 在板上写问题、做标记 / 让你改)**:**答案贴在它旁边,不要新开一幕接在后面**。先 `tb_get_board` 看「学员在板上写的 / 标记的」一节(学员粘来 `tb:<板>/E<n>` 编号时直接用它),必要时 `tb_describe` 读全文和邻居,再 `tb_reply` 把回答方框放在最相关的元素旁边并画箭头(学员写的那句问题、高亮的那段、或问题所指的那块;几个问题就分别贴;回答原文在对话里也给一遍),**带上 `act`** = 这个问题关于哪一幕(按问题的意思从读板结果列的幕 id 里挑,不按它画在哪 —— 导览模式会把问题和回答接在那一幕之后播);只有真正的新话题才 `tb_add_act`;**学员自己手工做了一部分板、打了导览步骤的标签,再让你接着做**:读板结果里的「板上的导览步骤」列着他的步骤和标签,按标签理解他的思路、接着他的内容往下讲,新幕的 edges 用 `E<n>` 把新内容连到学员的元素上(`{from:"E5", to:"<本幕条目 id>"}`),别另起炉灶;改代码 = `tb_update {boardId, changes:[{entity, code}]}` 然后 `tb_run`,**每条改动只填一个字段**(text / ascii(公式,AsciiMath,优先)/ latex(AsciiMath 写不出来时)/ code / label / tone);结果里的 `conflicts` 是你上次读板之后学员自己改过 / 删掉的元素(这次没动它们):先 `tb_describe` 看学员改成了什么,要覆盖先问学员,同意后带 `force:true` 重发;删元素用 `tb_delete`(删之前跟学员确认);调幕序 `tb_set_acts`;代码块没绑环境就 `tb_bind_env` 再跑。这些工具的结果第一行同样原样发给学员。
+
+7. **板上新动静**:工具结果末尾的「📌 学员在板上的新动静」、以及学员发话时自动附上的同样内容,都是学员刚在板上做的事 —— 当成学员在对你说话来回应(问题答在旁边,改动先看懂再接着讲);学员想让你一直盯着,用 :openlabs watch。
 
 **边界**:工具说「还没连上 / 未连接」→ 让学员先 :openlabs connect;返回 402(额度 / 预算不够)→ 原话转达,不要重试;其它错误按工具给的下一步走,不要把原始报错甩给学员。
 
@@ -296,14 +301,14 @@ Lab 助手在服务端,手里有这个 lab 的参考解、知识点清单、教�
 - 推断不出、或用到了不止一个环境 → 列出用到的环境(必要时配合 `tb_list_envs`),问学员选一个,选定后再继续。
 - 学员没点名代码块 → 问清楚要绑到哪个块(或对板上每个用这个环境的代码块都绑一遍)。
 
-**安装**:调 `tb_env_customize`,`env` = 上面定下的环境,`add` = 包名列表;学员点名了某个代码块(如「给 E12 装」)就把 `entity` 设为 `tb:<板 id>/E12`,就绪后会自动绑到那个块。
+**出方案**:调 `tb_env_customize`,`env` = 上面定下的环境,`apt` = 系统包、`add` = Python 包(至少一个);学员点名了某个代码块(如「给 E12 装」)就把 `entity` 设为 `tb:<板 id>/E12`。它**不会自己建**,只返回一条确认链接 —— 把方案(底座、包、预计十几秒到几分钟)和链接给学员,请学员打开链接核对后点「建这个环境」(验证会用学员的环境额度)。
 
-**汇报进度**:先告诉学员「正在验证配方…」(验证要 10 秒到几分钟);工具返回后:
-- 就绪 → 告诉学员配方已就绪。**配方只有在绑定到代码块、或运行时显式传 recipe 才会生效**:给了 entity 时说明已排队绑到该代码块(用户打开板后生效,现在要立刻跑就在 tb_run 传 recipe=<配方 id>);没给 entity 就用 `tb_bind_recipe` 绑到学员要用的代码块。
-- 失败 → 把失败原因(verifyLog 末尾)讲给学员,建议换包名 / 版本后重试。
-- 还在验证 → 说明还没好,稍后用 `tb_env_recipes` 查。
+**学员说点好了**:用 `tb_env_recipes` 查状态:
+- 就绪 → 告诉学员环境可用。**只有绑到代码块、或运行时显式传 recipe 才会生效**:用 `tb_bind_recipe` 绑到学员要用的代码块(用户打开板后生效),现在要立刻跑就在 `tb_run` 传 recipe=<id>。学员想让这块板之后新建的代码块都用它 → `tb_bind_recipe boardId=<板 id> recipe=<id>`(设为板默认;已有的块不变)。学员也可以自己在「环境」面板的「我的 Customized」里点「设为本板默认」。
+- 失败 → 把失败原因(verifyLog 末尾)讲给学员,改包名 / 版本后再出一条新链接(最多 3 轮)。
+- 还在验证 → 说明还没好,稍后再查。
 
-**边界**:返回 `apt_not_allowed`(要装系统包)→ 把工具给的说明和联系方式**原样**显示给学员,不要换别的办法绕过去;「还没连上」→ 先 :openlabs connect;402 → 原话转达。
+**边界**:系统包写进 `apt`(Debian 包名,不带版本);内核 / 显卡驱动 / CUDA / systemd / docker 这类装不了 —— 工具拒绝时把它给的说明**原样**告诉学员(要的话发邮件联系我们),不要换别的办法绕过去;「还没连上」→ 先 :openlabs connect;402 → 原话转达。
 
 ### `:lab-review`(或"提交 review" / "我做完了想让Mentor批改")
 学员要提交当前 lab 的 review。
